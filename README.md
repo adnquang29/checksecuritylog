@@ -9,7 +9,7 @@ bash
 cd microblog
 2. Tạo và kích hoạt môi trường ảo (nên dùng):
 bash
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate        # Đối với Linux/MacOS
 venv\Scripts\activate           # Đối với Windows
 3. Cài đặt các package cần thiết:
