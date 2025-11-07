@@ -61,45 +61,52 @@ bash
 flask db downgrade base   # hoặc sử dụng flask db downgrade <revision>
 Rồi migrate/upgrade lại.
 
-Để reset một database MariaDB (hoặc MySQL) về "mới hoàn toàn", để đảm bảo bạn có môi trường sạch khi chạy các lệnh Flask-Migrate/Alembic như:
+Bạn đã thực hiện đúng các bước để reset hoàn toàn MariaDB/MySQL về trạng thái mới tinh. Tổng kết lại, bạn đã:
 
-flask db init
-flask db downgrade base
-flask db migrate
-flask db upgrade
-Hãy làm theo các bước sau:
-
-1. Xóa database cũ và tạo lại database mới
-Giả sử tên database của bạn là microblog.
-
-Đăng nhập MySQL/MariaDB:
+Dừng dịch vụ MySQL (hoặc MariaDB):
 
 bash
-mysql -u <username> -p
-# Nhập password
-Sau đó thực hiện các lệnh SQL sau:
+sudo systemctl stop mysql # hoặc mariadb
+Xoá toàn bộ dữ liệu cũ:
+
+bash
+sudo rm -rf /var/lib/mysql/*
+sudo rm -rf /var/log/mysql/*
+Cài đặt lại database system tables:
+
+bash
+sudo mariadb-install-db --user=mysql --basedir=/usr --datadir=/var/lib/mysql
+Khởi động lại MariaDB và enable dịch vụ:
+
+bash
+sudo systemctl start mariadb
+sudo systemctl enable mariadb
+Tiếp theo: Làm việc với Flask-Migrate
+Vì bây giờ MariaDB/MYSQL của bạn là mới, bạn cần:
+
+Truy cập MariaDB để tạo 1 database mới mà ứng dụng Flask sẽ dùng (ví dụ tên là microblog):
+
+bash
+sudo mysql -u root
+Trong MySQL shell:
 
 SQL
-DROP DATABASE IF EXISTS microblog;
 CREATE DATABASE microblog CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'microbloguser'@'localhost' IDENTIFIED BY 'matkhau';
+GRANT ALL PRIVILEGES ON microblog.* TO 'microbloguser'@'localhost';
+FLUSH PRIVILEGES;
 EXIT;
-2. (Tùy chọn) Xoá thư mục migrations trong project Flask
-Nếu bạn muốn reset migration script về ban đầu (nên làm nếu có quá nhiều thay đổi, tránh lỗi):
+(Thay matkhau bằng mật khẩu bạn chọn!)
+
+Cấu hình lại chuỗi kết nối DB trong app Flask: Trong config.py hoặc .env:
+
+Python
+SQLALCHEMY_DATABASE_URI = "mysql+pymysql://microbloguser:matkhau@localhost/microblog"
+Chạy lại các lệnh Flask-Migrate:
+Bây giờ bạn có thể chạy lần lượt:
 
 bash
-rm -rf migrations
-3. Chạy lại các lệnh migrate
-bash
-# (Chỉ chạy 1 lần đầu tiên)
-flask db init
-
-# Tạo migration
-flask db migrate -m "initial migration"
-
-# Đẩy cấu trúc lên database
-flask db upgrade
-4. (Ít dùng) flask db downgrade base
-Nếu bạn chỉ muốn xóa bỏ tất cả các thay đổi đã migrate mà KHÔNG xóa database, thì có thể dùng:
-bash
-flask db downgrade base
-Nhưng cách này chỉ đưa schema về trạng thái trắng, không xóa data/database.
+flask db init         # Nếu chưa có folder migrations (một lần đầu)
+flask db downgrade base  # (không bắt buộc, nếu bạn thực sự muốn đưa schema DB về trạng thái gốc base)
+flask db migrate      # Tạo migration dựa vào models hiện tại
+flask db upgrade      # Tạo bảng trong MariaDB
