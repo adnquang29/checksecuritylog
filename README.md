@@ -1,3 +1,5 @@
+https://github.com/BugBusterBot/microblog
+
 # Chạy project
 
 Để chạy project checksecuritylog sau khi bạn đã git clone repository về, bạn cần thực hiện một số bước sau tuỳ thuộc vào công nghệ mà repository sử dụng. Dưới đây là các bước tổng quát áp dụng cho dự án Python (vì microblog thường dùng Flask hoặc Django):
